@@ -12,62 +12,58 @@
       aspect-ratio: 9/16;
       background-size: cover;
       background-position: center;
-      transition: all 0.2s ease;
       position: relative;
       overflow: hidden;
+      border-radius: 8px;
+      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
     }
 
     .grid-cell:hover {
-      transform: scale(0.98);
-      box-shadow: 0 0 10px rgba(0, 0, 0, 0.2);
+      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
     }
 
     .grid-cell.dragging {
       opacity: 0.5;
-      border: 2px dashed #000;
+      border: 2px dashed #0095f6;
     }
 
     .color-option {
-      width: 30px;
-      height: 30px;
+      width: 32px;
+      height: 32px;
       border-radius: 50%;
       cursor: pointer;
-      transition: transform 0.2s;
       border: 2px solid transparent;
+      margin: 4px;
     }
 
     .color-option:hover,
     .color-option.active {
-      transform: scale(1.1);
-      border-color: #000;
+      border-color: #0095f6;
     }
 
     #exportBtn {
-      transition: all 0.3s;
+      background-color: #0095f6;
     }
 
     #exportBtn:hover {
-      transform: translateY(-2px);
-      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+      background-color: #0081d6;
     }
 
     .empty-cell-content {
-      /* Styles for the content inside an empty cell */
       display: flex;
       flex-direction: column;
       align-items: center;
       justify-content: center;
       width: 100%;
       height: 100%;
-      color: #999;
-      font-size: 12px;
-      pointer-events: none; /* Allow clicks to pass through to the parent unless controls are hovered */
+      color: #8e8e8e;
+      font-size: 14px;
+      pointer-events: none;
     }
 
     .empty-cell-bg {
-       background-color: #f5f5f5;
+      background-color: #fafafa;
     }
-
 
     .cell-content {
       width: 100%;
@@ -82,8 +78,7 @@
       width: 100%;
       height: 100%;
       z-index: 1;
-      /* Using mix-blend-mode for image overlays */
-       mix-blend-mode: multiply;
+      mix-blend-mode: multiply;
     }
 
     .cell-controls {
@@ -92,13 +87,14 @@
       left: 0;
       right: 0;
       background: rgba(0, 0, 0, 0.5);
-      padding: 5px;
+      padding: 8px;
       display: flex;
       justify-content: center;
-      gap: 5px;
+      gap: 8px;
       z-index: 2;
       opacity: 0;
-      transition: opacity 0.2s;
+      border-bottom-left-radius: 8px;
+      border-bottom-right-radius: 8px;
     }
 
     .grid-cell:hover .cell-controls {
@@ -106,32 +102,32 @@
     }
 
     .control-btn {
-      background: rgba(255, 255, 255, 0.8);
+      background: rgba(255, 255, 255, 0.9);
       border: none;
       border-radius: 50%;
-      width: 25px;
-      height: 25px;
+      width: 28px;
+      height: 28px;
       display: flex;
       align-items: center;
       justify-content: center;
       cursor: pointer;
-      font-size: 12px;
-      color: #333; /* Icon color */
+      font-size: 14px;
+      color: #262626;
     }
 
-     .control-btn:hover {
-        background: white;
-        transform: scale(1.1);
-     }
+    .control-btn:hover {
+      background: white;
+    }
 
     .color-palette {
       display: grid;
       grid-template-columns: repeat(6, 1fr);
       gap: 8px;
-      padding: 10px;
+      padding: 12px;
       background: white;
-      border-radius: 8px;
-      box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+      border-radius: 12px;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+      border: 1px solid #dbdbdb;
     }
 
     .color-picker-container {
@@ -142,15 +138,210 @@
       position: absolute;
       top: 100%;
       left: 0;
-      z-index: 10;
-      margin-top: 5px;
-      display: none; /* Hidden by default */
+      z-index: 100;
+      margin-top: 8px;
+      display: none;
+      min-width: 240px;
     }
 
-     /* Keep dropdown open when hovered or active (e.g., input focused) */
-    .color-picker-container:hover .color-picker-dropdown,
     .color-picker-container.active .color-picker-dropdown {
-        display: block;
+      display: block;
+    }
+
+    .custom-color-section {
+      padding: 12px;
+      background: white;
+      border-top: 1px solid #dbdbdb;
+      border-radius: 0 0 12px 12px;
+    }
+
+    .custom-color-input {
+      width: 100%;
+      height: 36px;
+      border: 1px solid #dbdbdb;
+      border-radius: 8px;
+      padding: 4px;
+      margin-bottom: 8px;
+    }
+
+    .hex-color-input {
+      width: 100%;
+      height: 36px;
+      border: 1px solid #dbdbdb;
+      border-radius: 8px;
+      padding: 4px 8px;
+      margin-bottom: 8px;
+      font-family: monospace;
+    }
+
+    .apply-custom-color {
+      width: 100%;
+      background-color: #0095f6;
+      color: white;
+      border: none;
+      border-radius: 8px;
+      padding: 8px;
+      font-weight: 600;
+      cursor: pointer;
+    }
+
+    .apply-custom-color:hover {
+      background-color: #0081d6;
+    }
+
+    .selected-color-display {
+      width: 36px;
+      height: 36px;
+      border-radius: 50%;
+      border: 2px solid #dbdbdb;
+      margin-right: 8px;
+    }
+
+    .selected-color-display:hover {
+      border-color: #0095f6;
+    }
+
+    .upload-button {
+      background-color: #0095f6;
+      color: white;
+      border: none;
+      border-radius: 8px;
+      padding: 8px 16px;
+      font-weight: 600;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .upload-button:hover {
+      background-color: #0081d6;
+    }
+
+    .upload-progress {
+      margin-top: 12px;
+      background-color: #f0f0f0;
+      border-radius: 8px;
+      overflow: hidden;
+    }
+
+    .progress-bar {
+      height: 4px;
+      background-color: #0095f6;
+    }
+
+    .upload-status {
+      margin-top: 8px;
+      font-size: 14px;
+      color: #8e8e8e;
+    }
+
+    /* Theme styles */
+    body.dark-theme {
+      background-color: #121212;
+      color: #ffffff;
+    }
+
+    body.dark-theme .container {
+      background-color: #1e1e1e;
+    }
+
+    body.dark-theme .grid-cell {
+      background-color: #2d2d2d;
+    }
+
+    body.dark-theme .empty-cell-bg {
+      background-color: #2d2d2d;
+    }
+
+    body.dark-theme .empty-cell-content {
+      color: #8e8e8e;
+    }
+
+    body.dark-theme .color-palette {
+      background-color: #2d2d2d;
+      border-color: #404040;
+    }
+
+    body.dark-theme .custom-color-section {
+      background-color: #2d2d2d;
+      border-color: #404040;
+    }
+
+    body.dark-theme .custom-color-input,
+    body.dark-theme .hex-color-input {
+      background-color: #404040;
+      border-color: #505050;
+      color: #ffffff;
+    }
+
+    body.dark-theme .upload-progress {
+      background-color: #404040;
+    }
+
+    body.dark-theme .mb-6 {
+      background-color: #2d2d2d;
+      border-color: #404040;
+    }
+
+    body.dark-theme .text-gray-700 {
+      color: #e0e0e0;
+    }
+
+    body.dark-theme .text-gray-600 {
+      color: #b0b0b0;
+    }
+
+    body.dark-theme .bg-white {
+      background-color: #2d2d2d;
+    }
+
+    body.dark-theme .border-gray-200 {
+      border-color: #404040;
+    }
+
+    body.dark-theme .bg-gray-50 {
+      background-color: #2d2d2d;
+    }
+
+    body.dark-theme .text-gray-800 {
+      color: #ffffff;
+    }
+
+    body.dark-theme .bg-gray-100 {
+      background-color: #404040;
+    }
+
+    body.dark-theme .hover\:bg-gray-200:hover {
+      background-color: #505050;
+    }
+
+    body.dark-theme .hover\:bg-gray-50:hover {
+      background-color: #404040;
+    }
+
+    .theme-switch {
+      position: fixed;
+      top: 20px;
+      right: 20px;
+      z-index: 1000;
+    }
+
+    .theme-switch-btn {
+      background-color: #0095f6;
+      color: white;
+      border: none;
+      border-radius: 8px;
+      padding: 8px 16px;
+      font-weight: 600;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .theme-switch-btn:hover {
+      background-color: #0081d6;
     }
   </style>
 </head>
@@ -170,71 +361,63 @@
       </div>
     </header>
 
-    <div class="mb-6 p-4 bg-gray-50 rounded-lg">
-      <div class="flex flex-wrap items-center gap-4">
+    <div class="theme-switch">
+      <button class="theme-switch-btn" onclick="toggleTheme()">
+        <i class="fas fa-moon"></i>
+        <span>Dark Mode</span>
+      </button>
+    </div>
+
+    <div class="mb-6 p-4 bg-white rounded-lg border border-gray-200">
+      <div class="flex flex-wrap items-center gap-6">
         <div>
-          <label for="imageUpload" class="block text-sm font-medium text-gray-700 mb-1">Upload Images</label>
+          <label for="imageUpload" class="block text-sm font-medium text-gray-700 mb-2">Upload Images</label>
           <input type="file" id="imageUpload" accept="image/*" multiple class="hidden">
-          <button onclick="document.getElementById('imageUpload').click()"
-            class="bg-white border border-gray-300 text-gray-700 px-4 py-2 rounded-lg hover:bg-gray-50 flex items-center">
-            <i class="fas fa-image mr-2"></i> Select Files
+          <button onclick="document.getElementById('imageUpload').click()" class="upload-button">
+            <i class="fas fa-image"></i>
+            <span>Select Files</span>
           </button>
-          <div id="uploadProgress" class="hidden mt-2">
-            <div class="w-full bg-gray-200 rounded-full h-2.5">
-              <div id="progressBar" class="bg-blue-600 h-2.5 rounded-full" style="width: 0%"></div>
+          <div id="uploadProgress" class="hidden">
+            <div class="upload-progress">
+              <div id="progressBar" class="progress-bar" style="width: 0%"></div>
             </div>
-            <p id="uploadStatus" class="text-sm text-gray-600 mt-1">Processing...</p>
+            <p id="uploadStatus" class="upload-status">Processing...</p>
           </div>
         </div>
 
         <div class="color-picker-container">
-          <label class="block text-sm font-medium text-gray-700 mb-1">Selected Fill Color</label>
+          <label class="block text-sm font-medium text-gray-700 mb-2">Selected Color</label>
           <div class="flex items-center">
-            <div id="selectedColorDisplay" class="color-option mr-2" style="background-color: #ffffff;"></div>
-             <!-- Button to open dropdown if hover isn't sufficient -->
-             <!-- <button id="toggleColorPicker" class="bg-white border border-gray-300 text-gray-700 px-3 py-1 rounded-lg hover:bg-gray-50 text-sm">
-                 <i class="fas fa-palette mr-1"></i> Choose
-             </button> -->
+            <div id="selectedColorDisplay" class="selected-color-display" style="background-color: #ffffff;" onclick="toggleColorPicker()"></div>
+            <span class="text-sm text-gray-600">Click to change color</span>
           </div>
 
           <div class="color-picker-dropdown">
             <div class="color-palette">
-              <!-- Existing color options -->
-              <div class="color-option bg-red-500" data-color="#ef4444" onclick="selectColor(this)"></div>
-              <div class="color-option bg-orange-500" data-color="#f97316" onclick="selectColor(this)"></div>
-              <div class="color-option bg-yellow-500" data-color="#eab308" onclick="selectColor(this)"></div>
-              <div class="color-option bg-green-500" data-color="#22c55e" onclick="selectColor(this)"></div>
-              <div class="color-option bg-blue-500" data-color="#3b82f6" onclick="selectColor(this)"></div>
-              <div class="color-option bg-indigo-500" data-color="#6366f1" onclick="selectColor(this)"></div>
-              <div class="color-option bg-purple-500" data-color="#a855f7" onclick="selectColor(this)"></div>
-              <div class="color-option bg-pink-500" data-color="#ec4899" onclick="selectColor(this)"></div>
-              <div class="color-option bg-rose-500" data-color="#f43f5e" onclick="selectColor(this)"></div>
-              <div class="color-option bg-amber-500" data-color="#f59e0b" onclick="selectColor(this)"></div>
-              <div class="color-option bg-lime-500" data-color="#84cc16" onclick="selectColor(this)"></div>
-              <div class="color-option bg-emerald-500" data-color="#10b981" onclick="selectColor(this)"></div>
-              <div class="color-option bg-teal-500" data-color="#14b8a6" onclick="selectColor(this)"></div>
-              <div class="color-option bg-cyan-500" data-color="#06b6d4" onclick="selectColor(this)"></div>
-              <div class="color-option bg-sky-500" data-color="#0ea5e9" onclick="selectColor(this)"></div>
-              <div class="color-option bg-violet-500" data-color="#8b5cf6" onclick="selectColor(this)"></div>
-              <div class="color-option bg-fuchsia-500" data-color="#d946ef" onclick="selectColor(this)"></div>
-              <div class="color-option bg-gray-500" data-color="#6b7280" onclick="selectColor(this)"></div>
-              <div class="color-option bg-slate-500" data-color="#64748b" onclick="selectColor(this)"></div>
-              <div class="color-option bg-neutral-500" data-color="#737373" onclick="selectColor(this)"></div>
-              <div class="color-option bg-stone-500" data-color="#78716c" onclick="selectColor(this)"></div>
-              <div class="color-option bg-zinc-500" data-color="#71717a" onclick="selectColor(this)"></div>
+              <div class="color-option bg-red-500" data-color="#ff0000" onclick="selectColor(this)"></div>
+              <div class="color-option bg-orange-500" data-color="#ff7f00" onclick="selectColor(this)"></div>
+              <div class="color-option bg-yellow-500" data-color="#ffff00" onclick="selectColor(this)"></div>
+              <div class="color-option bg-green-500" data-color="#00ff00" onclick="selectColor(this)"></div>
+              <div class="color-option bg-blue-500" data-color="#0000ff" onclick="selectColor(this)"></div>
+              <div class="color-option bg-purple-500" data-color="#8b00ff" onclick="selectColor(this)"></div>
+              <div class="color-option bg-pink-500" data-color="#ff00ff" onclick="selectColor(this)"></div>
+              <div class="color-option bg-rose-500" data-color="#ff007f" onclick="selectColor(this)"></div>
+              <div class="color-option bg-amber-500" data-color="#ffbf00" onclick="selectColor(this)"></div>
+              <div class="color-option bg-lime-500" data-color="#7fff00" onclick="selectColor(this)"></div>
+              <div class="color-option bg-emerald-500" data-color="#00ff7f" onclick="selectColor(this)"></div>
+              <div class="color-option bg-cyan-500" data-color="#00ffff" onclick="selectColor(this)"></div>
+              <div class="color-option bg-sky-500" data-color="#007fff" onclick="selectColor(this)"></div>
+              <div class="color-option bg-violet-500" data-color="#7f00ff" onclick="selectColor(this)"></div>
+              <div class="color-option bg-fuchsia-500" data-color="#ff007f" onclick="selectColor(this)"></div>
+              <div class="color-option bg-gray-500" data-color="#808080" onclick="selectColor(this)"></div>
+              <div class="color-option bg-slate-500" data-color="#708090" onclick="selectColor(this)"></div>
               <div class="color-option bg-black" data-color="#000000" onclick="selectColor(this)"></div>
-              <div class="color-option bg-white border border-gray-300 active" data-color="#ffffff"
-                onclick="selectColor(this)"></div> <!-- Default to white -->
-               <!-- Gradient removed as it complicates canvas export -->
-              <!-- <div class="color-option"
-                style="background: linear-gradient(45deg, #ff0000, #ff00ff, #0000ff, #00ffff, #00ff00, #ffff00, #ff0000);"
-                data-color="gradient" onclick="selectColor(this)"></div> -->
+              <div class="color-option bg-white border border-gray-300 active" data-color="#ffffff" onclick="selectColor(this)"></div>
             </div>
-            <div class="p-2 bg-white border-t border-gray-200 rounded-b-lg">
-              <input type="color" id="customColorPicker" value="#ffffff"
-                class="w-full h-8 border border-gray-300 rounded cursor-pointer">
-              <button id="applyCustomColor"
-                class="mt-2 w-full bg-blue-500 hover:bg-blue-600 text-white px-3 py-1 rounded text-sm">
+            <div class="custom-color-section">
+              <input type="color" id="customColorPicker" class="custom-color-input" value="#ffffff">
+              <input type="text" id="hexColorInput" class="hex-color-input" placeholder="Enter hex color (e.g. #ff0000)">
+              <button id="applyCustomColor" class="apply-custom-color">
                 Apply Custom Color
               </button>
             </div>
@@ -525,6 +708,20 @@
       e.target.value = '';
     });
 
+    // Color picker toggle function
+    function toggleColorPicker() {
+      const container = document.querySelector('.color-picker-container');
+      container.classList.toggle('active');
+    }
+
+    // Close color picker when clicking outside
+    document.addEventListener('click', function(event) {
+      const colorPicker = document.querySelector('.color-picker-container');
+      if (!colorPicker.contains(event.target)) {
+        colorPicker.classList.remove('active');
+      }
+    });
+
     // Color selection functions
     function selectColor(element) {
       // Remove active class from all color options
@@ -538,22 +735,10 @@
       // Get the color from data attribute or background
       const color = element.dataset.color || element.style.backgroundColor;
 
-       // Gradient is no longer supported for single cell fill/overlay export
-       if (color && color.includes('gradient')) {
-            console.warn("Gradients are not supported for single cell fill/overlay.");
-            selectedColor = '#ffffff'; // Default to white
-             document.getElementById('selectedColorDisplay').style.backgroundColor = selectedColor;
-            return;
-       }
-
       selectedColor = color;
 
       // Update selected color display
       document.getElementById('selectedColorDisplay').style.backgroundColor = selectedColor;
-
-      // Close dropdown after selection (optional, but good UX)
-       // element.closest('.color-picker-dropdown').style.display = 'none';
-        // If using the dropdown toggle button, you might hide it there
     }
 
     // Apply custom color from color picker input
@@ -562,15 +747,12 @@
       const customColor = customColorInput.value;
 
       // Remove active class from predefined color options
-       document.querySelectorAll('.color-palette .color-option').forEach(opt => {
-           opt.classList.remove('active');
-       });
+      document.querySelectorAll('.color-palette .color-option').forEach(opt => {
+        opt.classList.remove('active');
+      });
 
       selectedColor = customColor;
       document.getElementById('selectedColorDisplay').style.backgroundColor = selectedColor;
-
-      // Close dropdown after applying (optional)
-       // customColorInput.closest('.color-picker-dropdown').style.display = 'none';
     });
 
     // Function to apply color to a specific cell index
@@ -783,9 +965,48 @@
          document.querySelector('.color-picker-container').classList.remove('active');
      });
 
+    // Theme switching
+    function toggleTheme() {
+      document.body.classList.toggle('dark-theme');
+      const isDark = document.body.classList.contains('dark-theme');
+      localStorage.setItem('theme', isDark ? 'dark' : 'light');
+      
+      const themeBtn = document.querySelector('.theme-switch-btn');
+      themeBtn.innerHTML = isDark 
+        ? '<i class="fas fa-sun"></i><span>Light Mode</span>'
+        : '<i class="fas fa-moon"></i><span>Dark Mode</span>';
+    }
 
-    // Initialize the app
-    document.addEventListener('DOMContentLoaded', loadFromStorage);
+    // Load saved theme
+    function loadTheme() {
+      const savedTheme = localStorage.getItem('theme');
+      if (savedTheme === 'dark') {
+        document.body.classList.add('dark-theme');
+        const themeBtn = document.querySelector('.theme-switch-btn');
+        themeBtn.innerHTML = '<i class="fas fa-sun"></i><span>Light Mode</span>';
+      }
+    }
+
+    // Hex color input handling
+    document.getElementById('hexColorInput').addEventListener('input', function(e) {
+      const hexColor = e.target.value;
+      if (/^#[0-9A-Fa-f]{6}$/.test(hexColor)) {
+        document.getElementById('customColorPicker').value = hexColor;
+        selectedColor = hexColor;
+        document.getElementById('selectedColorDisplay').style.backgroundColor = hexColor;
+      }
+    });
+
+    // Update hex input when color picker changes
+    document.getElementById('customColorPicker').addEventListener('input', function(e) {
+      document.getElementById('hexColorInput').value = e.target.value;
+    });
+
+    // Initialize theme
+    document.addEventListener('DOMContentLoaded', function() {
+      loadTheme();
+      loadFromStorage();
+    });
   </script>
 </body>
 
