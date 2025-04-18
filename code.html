@@ -1,0 +1,792 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Instagram Grid Editor</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <style>
+    .grid-cell {
+      aspect-ratio: 9/16;
+      background-size: cover;
+      background-position: center;
+      transition: all 0.2s ease;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .grid-cell:hover {
+      transform: scale(0.98);
+      box-shadow: 0 0 10px rgba(0, 0, 0, 0.2);
+    }
+
+    .grid-cell.dragging {
+      opacity: 0.5;
+      border: 2px dashed #000;
+    }
+
+    .color-option {
+      width: 30px;
+      height: 30px;
+      border-radius: 50%;
+      cursor: pointer;
+      transition: transform 0.2s;
+      border: 2px solid transparent;
+    }
+
+    .color-option:hover,
+    .color-option.active {
+      transform: scale(1.1);
+      border-color: #000;
+    }
+
+    #exportBtn {
+      transition: all 0.3s;
+    }
+
+    #exportBtn:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    }
+
+    .empty-cell-content {
+      /* Styles for the content inside an empty cell */
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      width: 100%;
+      height: 100%;
+      color: #999;
+      font-size: 12px;
+      pointer-events: none; /* Allow clicks to pass through to the parent unless controls are hovered */
+    }
+
+    .empty-cell-bg {
+       background-color: #f5f5f5;
+    }
+
+
+    .cell-content {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+
+    .color-fill-overlay {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      z-index: 1;
+      /* Using mix-blend-mode for image overlays */
+       mix-blend-mode: multiply;
+    }
+
+    .cell-controls {
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      background: rgba(0, 0, 0, 0.5);
+      padding: 5px;
+      display: flex;
+      justify-content: center;
+      gap: 5px;
+      z-index: 2;
+      opacity: 0;
+      transition: opacity 0.2s;
+    }
+
+    .grid-cell:hover .cell-controls {
+      opacity: 1;
+    }
+
+    .control-btn {
+      background: rgba(255, 255, 255, 0.8);
+      border: none;
+      border-radius: 50%;
+      width: 25px;
+      height: 25px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      font-size: 12px;
+      color: #333; /* Icon color */
+    }
+
+     .control-btn:hover {
+        background: white;
+        transform: scale(1.1);
+     }
+
+    .color-palette {
+      display: grid;
+      grid-template-columns: repeat(6, 1fr);
+      gap: 8px;
+      padding: 10px;
+      background: white;
+      border-radius: 8px;
+      box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+    }
+
+    .color-picker-container {
+      position: relative;
+    }
+
+    .color-picker-dropdown {
+      position: absolute;
+      top: 100%;
+      left: 0;
+      z-index: 10;
+      margin-top: 5px;
+      display: none; /* Hidden by default */
+    }
+
+     /* Keep dropdown open when hovered or active (e.g., input focused) */
+    .color-picker-container:hover .color-picker-dropdown,
+    .color-picker-container.active .color-picker-dropdown {
+        display: block;
+    }
+  </style>
+</head>
+
+<body class="bg-white font-sans">
+  <div class="container mx-auto px-4 py-8 max-w-4xl">
+    <header class="flex justify-between items-center mb-8">
+      <h1 class="text-2xl font-bold text-gray-800">Instagram Grid Editor</h1>
+      <div class="flex space-x-4">
+        <button id="addRowBtn" class="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-lg flex items-center">
+          <i class="fas fa-plus mr-2"></i> Add Row
+        </button>
+        <button id="exportBtn"
+          class="bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded-lg flex items-center">
+          <i class="fas fa-download mr-2"></i> Export JPEG
+        </button>
+      </div>
+    </header>
+
+    <div class="mb-6 p-4 bg-gray-50 rounded-lg">
+      <div class="flex flex-wrap items-center gap-4">
+        <div>
+          <label for="imageUpload" class="block text-sm font-medium text-gray-700 mb-1">Upload Images</label>
+          <input type="file" id="imageUpload" accept="image/*" multiple class="hidden">
+          <button onclick="document.getElementById('imageUpload').click()"
+            class="bg-white border border-gray-300 text-gray-700 px-4 py-2 rounded-lg hover:bg-gray-50 flex items-center">
+            <i class="fas fa-image mr-2"></i> Select Files
+          </button>
+          <div id="uploadProgress" class="hidden mt-2">
+            <div class="w-full bg-gray-200 rounded-full h-2.5">
+              <div id="progressBar" class="bg-blue-600 h-2.5 rounded-full" style="width: 0%"></div>
+            </div>
+            <p id="uploadStatus" class="text-sm text-gray-600 mt-1">Processing...</p>
+          </div>
+        </div>
+
+        <div class="color-picker-container">
+          <label class="block text-sm font-medium text-gray-700 mb-1">Selected Fill Color</label>
+          <div class="flex items-center">
+            <div id="selectedColorDisplay" class="color-option mr-2" style="background-color: #ffffff;"></div>
+             <!-- Button to open dropdown if hover isn't sufficient -->
+             <!-- <button id="toggleColorPicker" class="bg-white border border-gray-300 text-gray-700 px-3 py-1 rounded-lg hover:bg-gray-50 text-sm">
+                 <i class="fas fa-palette mr-1"></i> Choose
+             </button> -->
+          </div>
+
+          <div class="color-picker-dropdown">
+            <div class="color-palette">
+              <!-- Existing color options -->
+              <div class="color-option bg-red-500" data-color="#ef4444" onclick="selectColor(this)"></div>
+              <div class="color-option bg-orange-500" data-color="#f97316" onclick="selectColor(this)"></div>
+              <div class="color-option bg-yellow-500" data-color="#eab308" onclick="selectColor(this)"></div>
+              <div class="color-option bg-green-500" data-color="#22c55e" onclick="selectColor(this)"></div>
+              <div class="color-option bg-blue-500" data-color="#3b82f6" onclick="selectColor(this)"></div>
+              <div class="color-option bg-indigo-500" data-color="#6366f1" onclick="selectColor(this)"></div>
+              <div class="color-option bg-purple-500" data-color="#a855f7" onclick="selectColor(this)"></div>
+              <div class="color-option bg-pink-500" data-color="#ec4899" onclick="selectColor(this)"></div>
+              <div class="color-option bg-rose-500" data-color="#f43f5e" onclick="selectColor(this)"></div>
+              <div class="color-option bg-amber-500" data-color="#f59e0b" onclick="selectColor(this)"></div>
+              <div class="color-option bg-lime-500" data-color="#84cc16" onclick="selectColor(this)"></div>
+              <div class="color-option bg-emerald-500" data-color="#10b981" onclick="selectColor(this)"></div>
+              <div class="color-option bg-teal-500" data-color="#14b8a6" onclick="selectColor(this)"></div>
+              <div class="color-option bg-cyan-500" data-color="#06b6d4" onclick="selectColor(this)"></div>
+              <div class="color-option bg-sky-500" data-color="#0ea5e9" onclick="selectColor(this)"></div>
+              <div class="color-option bg-violet-500" data-color="#8b5cf6" onclick="selectColor(this)"></div>
+              <div class="color-option bg-fuchsia-500" data-color="#d946ef" onclick="selectColor(this)"></div>
+              <div class="color-option bg-gray-500" data-color="#6b7280" onclick="selectColor(this)"></div>
+              <div class="color-option bg-slate-500" data-color="#64748b" onclick="selectColor(this)"></div>
+              <div class="color-option bg-neutral-500" data-color="#737373" onclick="selectColor(this)"></div>
+              <div class="color-option bg-stone-500" data-color="#78716c" onclick="selectColor(this)"></div>
+              <div class="color-option bg-zinc-500" data-color="#71717a" onclick="selectColor(this)"></div>
+              <div class="color-option bg-black" data-color="#000000" onclick="selectColor(this)"></div>
+              <div class="color-option bg-white border border-gray-300 active" data-color="#ffffff"
+                onclick="selectColor(this)"></div> <!-- Default to white -->
+               <!-- Gradient removed as it complicates canvas export -->
+              <!-- <div class="color-option"
+                style="background: linear-gradient(45deg, #ff0000, #ff00ff, #0000ff, #00ffff, #00ff00, #ffff00, #ff0000);"
+                data-color="gradient" onclick="selectColor(this)"></div> -->
+            </div>
+            <div class="p-2 bg-white border-t border-gray-200 rounded-b-lg">
+              <input type="color" id="customColorPicker" value="#ffffff"
+                class="w-full h-8 border border-gray-300 rounded cursor-pointer">
+              <button id="applyCustomColor"
+                class="mt-2 w-full bg-blue-500 hover:bg-blue-600 text-white px-3 py-1 rounded text-sm">
+                Apply Custom Color
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div id="gridContainer" class="grid grid-cols-3 gap-4 mb-8">
+      <!-- Grid cells will be added here -->
+    </div>
+
+    <div class="text-center">
+      <button id="loadMoreBtn" class="bg-gray-100 hover:bg-gray-200 text-gray-700 px-4 py-2 rounded-lg">
+        <i class="fas fa-arrow-down mr-2"></i> Load More
+      </button>
+    </div>
+  </div>
+
+  <script>
+    // Initialize the grid
+    let gridData = [];
+    let draggedCell = null;
+    // Initialize with a default selected color (white)
+    let selectedColor = '#ffffff';
+
+    // Load saved data from localStorage
+    function loadFromStorage() {
+      const savedData = localStorage.getItem('instagramGridData');
+      if (savedData) {
+        gridData = JSON.parse(savedData);
+        // Ensure backward compatibility if old data exists without 'type'
+         gridData = gridData.map(cell => {
+             if (cell && cell.content && !cell.type) {
+                 return { type: 'image', content: cell.content, color: null };
+             } else if (!cell || (!cell.content && !cell.color)) {
+                 return { type: 'empty', content: null, color: null };
+             }
+             return cell; // Already has type
+         });
+        renderGrid();
+      } else {
+        // Initialize with 3 empty rows if no saved data
+        addNewRow();
+        addNewRow();
+        addNewRow();
+      }
+      // Set the display for the default selected color
+      document.getElementById('selectedColorDisplay').style.backgroundColor = selectedColor;
+      // Mark the default color option as active
+      document.querySelector('.color-option[data-color="#ffffff"]').classList.add('active');
+    }
+
+    // Save current grid to localStorage
+    function saveToStorage() {
+      localStorage.setItem('instagramGridData', JSON.stringify(gridData));
+    }
+
+    // Add a new row to the grid
+    function addNewRow() {
+      for (let i = 0; i < 3; i++) {
+        gridData.push({type: 'empty', content: null, color: null});
+      }
+      renderGrid();
+      saveToStorage();
+    }
+
+    // Render the entire grid
+    function renderGrid() {
+      const gridContainer = document.getElementById('gridContainer');
+      gridContainer.innerHTML = '';
+
+      gridData.forEach((cell, index) => {
+        const cellElement = document.createElement('div');
+        cellElement.className = 'grid-cell rounded-lg overflow-hidden relative'; // Base classes
+        cellElement.dataset.index = index;
+
+        if (cell.type === 'image') {
+          cellElement.innerHTML = `
+                        <img src="${cell.content}" class="cell-content">
+                        ${cell.color ? `<div class="color-fill-overlay" style="background-color: ${cell.color};"></div>` : ''}
+                        <div class="cell-controls">
+                             <button class="control-btn" title="Apply selected color overlay" onclick="event.stopPropagation(); applyColorToCell(${index}, selectedColor)">
+                                <i class="fas fa-fill-drip"></i>
+                            </button>
+                            <button class="control-btn" title="Remove image" onclick="event.stopPropagation(); clearCell(${index})">
+                                <i class="fas fa-trash"></i>
+                            </button>
+                        </div>
+                    `;
+        } else if (cell.type === 'color') {
+          cellElement.style.backgroundColor = cell.content;
+           cellElement.innerHTML = `
+                        <div class="cell-controls">
+                             <!-- Fill button on color cell might not be needed, or could change color -->
+                             <!-- <button class="control-btn" title="Change color" onclick="event.stopPropagation(); applyColorToCell(${index}, selectedColor)">
+                                <i class="fas fa-fill-drip"></i>
+                            </button> -->
+                            <button class="control-btn" title="Remove color" onclick="event.stopPropagation(); clearCell(${index})">
+                                <i class="fas fa-trash"></i>
+                            </button>
+                        </div>
+                    `;
+        } else { // type is 'empty'
+          cellElement.classList.add('empty-cell-bg'); // Add a background class
+          cellElement.innerHTML = `
+                         <div class="empty-cell-content">
+                             <i class="fas fa-image text-2xl mb-2 text-gray-400"></i>
+                             <p class="text-gray-500">Empty</p>
+                         </div>
+                        <div class="cell-controls">
+                            <button class="control-btn" title="Fill with selected color" onclick="event.stopPropagation(); applyColorToCell(${index}, selectedColor)">
+                                <i class="fas fa-fill-drip"></i>
+                            </button>
+                            <button class="control-btn" title="Clear cell" onclick="event.stopPropagation(); clearCell(${index})">
+                                <i class="fas fa-trash"></i>
+                            </button>
+                        </div>
+                    `;
+           // Add click handler specifically for empty cells to allow image upload
+           // This handler is on the cellElement itself, but stopPropagation on control buttons prevents it from firing when controls are clicked.
+           cellElement.addEventListener('click', function() {
+                // Only trigger image upload if it's currently empty
+                if (gridData[index].type === 'empty') {
+                    const input = document.createElement('input');
+                    input.type = 'file';
+                    input.accept = 'image/*';
+                    input.onchange = (e) => {
+                        if (e.target.files.length) {
+                            handleImageUpload(e.target.files[0], index);
+                        }
+                    };
+                    input.click();
+                }
+           });
+        }
+
+
+        // Add drag and drop events to ALL cells
+        cellElement.draggable = true;
+        cellElement.addEventListener('dragstart', handleDragStart);
+        cellElement.addEventListener('dragover', handleDragOver);
+        cellElement.addEventListener('drop', handleDrop);
+        cellElement.addEventListener('dragend', handleDragEnd);
+
+
+        gridContainer.appendChild(cellElement);
+      });
+    }
+
+    // Handle image upload with Instagram aspect ratio
+    function handleImageUpload(file, index) {
+      // Show progress indicator
+      document.getElementById('uploadProgress').classList.remove('hidden');
+      document.getElementById('progressBar').style.width = '0%';
+      document.getElementById('uploadStatus').textContent = 'Processing...';
+
+      // Check file size (max 10MB)
+      if (file.size > 10 * 1024 * 1024) {
+        document.getElementById('uploadStatus').textContent = 'File too large (max 10MB)';
+        document.getElementById('progressBar').style.width = '100%';
+        setTimeout(() => {
+          document.getElementById('uploadProgress').classList.add('hidden');
+        }, 3000);
+        return;
+      }
+
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        const img = new Image();
+        img.onload = function () {
+          // Create canvas to crop to 9:16 ratio
+          const canvas = document.createElement('canvas');
+          const ctx = canvas.getContext('2d');
+
+          // Instagram ratio is typically 4:5 to 9:16. 9:16 is portrait video.
+          const targetWidth = 1080;
+          const targetHeight = 1920;
+          const targetRatio = targetWidth / targetHeight;
+
+          let sourceX = 0, sourceY = 0;
+          let sourceWidth = img.width, sourceHeight = img.height;
+
+          const sourceRatio = img.width / img.height;
+
+          // Calculate source area to crop
+          if (sourceRatio > targetRatio) {
+            // Source is wider, crop sides
+            sourceWidth = img.height * targetRatio;
+            sourceX = (img.width - sourceWidth) / 2;
+          } else {
+            // Source is taller or same ratio, crop top/bottom
+            sourceHeight = img.width / targetRatio;
+            sourceY = (img.height - sourceHeight) / 2;
+          }
+
+          canvas.width = targetWidth;
+          canvas.height = targetHeight;
+
+          // Draw the cropped portion onto the canvas, scaled to target size
+          ctx.drawImage(
+            img,
+            sourceX, sourceY, sourceWidth, sourceHeight,
+            0, 0, canvas.width, canvas.height
+          );
+
+          // Update progress
+          document.getElementById('progressBar').style.width = '50%';
+          document.getElementById('uploadStatus').textContent = 'Optimizing image...';
+
+          // Optimize image quality based on file size
+          const quality = file.size > 5 * 1024 * 1024 ? 0.8 : 0.9;
+          const croppedImage = canvas.toDataURL('image/jpeg', quality);
+
+          // Check if index is valid
+          if (index >= 0 && index < gridData.length) {
+            gridData[index] = {
+              type: 'image',
+              content: croppedImage,
+              color: null
+            };
+            renderGrid();
+            saveToStorage();
+
+            // Update progress
+            document.getElementById('progressBar').style.width = '100%';
+            document.getElementById('uploadStatus').textContent = 'Upload complete!';
+            setTimeout(() => {
+              document.getElementById('uploadProgress').classList.add('hidden');
+            }, 2000);
+          } else {
+            console.error("Attempted to upload image to invalid index:", index);
+            document.getElementById('uploadStatus').textContent = 'Error: Invalid cell index';
+            setTimeout(() => {
+              document.getElementById('uploadProgress').classList.add('hidden');
+            }, 3000);
+          }
+        };
+        img.onerror = function() {
+          document.getElementById('uploadStatus').textContent = 'Error: Failed to load image';
+          setTimeout(() => {
+            document.getElementById('uploadProgress').classList.add('hidden');
+          }, 3000);
+        };
+        img.src = e.target.result;
+      };
+      reader.onerror = function() {
+        document.getElementById('uploadStatus').textContent = 'Error: Failed to read file';
+        setTimeout(() => {
+          document.getElementById('uploadProgress').classList.add('hidden');
+        }, 3000);
+      };
+      reader.readAsDataURL(file);
+    }
+
+    // Handle multiple image upload
+    document.getElementById('imageUpload').addEventListener('change', (e) => {
+      const files = Array.from(e.target.files);
+      let emptyCellIndices = gridData
+          .map((cell, idx) => cell.type === 'empty' ? idx : -1)
+          .filter(idx => idx !== -1);
+
+      // If there aren't enough empty cells, add rows
+      if (files.length > emptyCellIndices.length) {
+        const neededRows = Math.ceil((files.length - emptyCellIndices.length) / 3);
+        for (let i = 0; i < neededRows; i++) {
+          addNewRow();
+        }
+        // Re-calculate empty indices after adding rows and rendering
+        emptyCellIndices = gridData
+          .map((cell, idx) => cell.type === 'empty' ? idx : -1)
+          .filter(idx => idx !== -1);
+      }
+
+      // Process files sequentially to avoid overwhelming the browser
+      let currentIndex = 0;
+      const processNextFile = () => {
+        if (currentIndex < files.length && currentIndex < emptyCellIndices.length) {
+          handleImageUpload(files[currentIndex], emptyCellIndices[currentIndex]);
+          currentIndex++;
+          // Process next file after a short delay to allow UI updates
+          setTimeout(processNextFile, 100);
+        }
+      };
+      processNextFile();
+
+      // Reset input
+      e.target.value = '';
+    });
+
+    // Color selection functions
+    function selectColor(element) {
+      // Remove active class from all color options
+      document.querySelectorAll('.color-palette .color-option').forEach(opt => {
+        opt.classList.remove('active');
+      });
+
+      // Add active class to selected color
+      element.classList.add('active');
+
+      // Get the color from data attribute or background
+      const color = element.dataset.color || element.style.backgroundColor;
+
+       // Gradient is no longer supported for single cell fill/overlay export
+       if (color && color.includes('gradient')) {
+            console.warn("Gradients are not supported for single cell fill/overlay.");
+            selectedColor = '#ffffff'; // Default to white
+             document.getElementById('selectedColorDisplay').style.backgroundColor = selectedColor;
+            return;
+       }
+
+      selectedColor = color;
+
+      // Update selected color display
+      document.getElementById('selectedColorDisplay').style.backgroundColor = selectedColor;
+
+      // Close dropdown after selection (optional, but good UX)
+       // element.closest('.color-picker-dropdown').style.display = 'none';
+        // If using the dropdown toggle button, you might hide it there
+    }
+
+    // Apply custom color from color picker input
+    document.getElementById('applyCustomColor').addEventListener('click', () => {
+      const customColorInput = document.getElementById('customColorPicker');
+      const customColor = customColorInput.value;
+
+      // Remove active class from predefined color options
+       document.querySelectorAll('.color-palette .color-option').forEach(opt => {
+           opt.classList.remove('active');
+       });
+
+      selectedColor = customColor;
+      document.getElementById('selectedColorDisplay').style.backgroundColor = selectedColor;
+
+      // Close dropdown after applying (optional)
+       // customColorInput.closest('.color-picker-dropdown').style.display = 'none';
+    });
+
+    // Function to apply color to a specific cell index
+    // This is called from the control buttons on cells
+    function applyColorToCell(index, color) {
+      if (index >= 0 && index < gridData.length) {
+          if (gridData[index].type === 'image') {
+            // Apply as overlay to image
+            gridData[index].color = color;
+          } else if (gridData[index].type === 'empty') {
+            // Change type to color fill
+            gridData[index] = {type: 'color', content: color, color: null}; // content holds the color string
+          }
+          // If type is 'color', we could potentially change its color here too,
+          // but the current UI only shows the fill icon on image/empty.
+          // If we added it to color cells, add 'else if (gridData[index].type === 'color') { gridData[index].content = color; }'
+
+          renderGrid();
+          saveToStorage();
+      } else {
+          console.error("Attempted to apply color to invalid index:", index);
+      }
+    }
+
+    // Clear a cell (makes it empty)
+    function clearCell(index) {
+       if (index >= 0 && index < gridData.length) {
+           gridData[index] = {type: 'empty', content: null, color: null};
+           renderGrid();
+           saveToStorage();
+       } else {
+           console.error("Attempted to clear invalid index:", index);
+       }
+    }
+
+    // Drag and drop functions
+    function handleDragStart(e) {
+      draggedCell = this;
+      this.classList.add('dragging');
+      e.dataTransfer.setData('text/plain', this.dataset.index);
+      e.dataTransfer.effectAllowed = 'move';
+       // Add a timeout to allow the ghost image to be created before hiding the original
+        setTimeout(() => {
+             this.style.visibility = 'hidden';
+        }, 0);
+    }
+
+    function handleDragOver(e) {
+      e.preventDefault();
+      e.dataTransfer.dropEffect = 'move';
+       // Add visual indicator to drop target if needed
+        // this.classList.add('drag-over');
+    }
+
+    function handleDrop(e) {
+      e.preventDefault();
+      // this.classList.remove('drag-over'); // Remove visual indicator
+      const sourceIndex = parseInt(e.dataTransfer.getData('text/plain'));
+      const targetIndex = parseInt(this.dataset.index);
+
+      if (sourceIndex !== targetIndex) {
+        // Swap the cells data in the array
+        const temp = gridData[sourceIndex];
+        gridData[sourceIndex] = gridData[targetIndex];
+        gridData[targetIndex] = temp;
+
+        renderGrid(); // Re-render the grid
+        saveToStorage(); // Save the new order
+      }
+    }
+
+    function handleDragEnd() {
+      this.classList.remove('dragging');
+       // Make the original element visible again after the drag finishes
+       if(draggedCell) {
+            draggedCell.style.visibility = '';
+       }
+      draggedCell = null;
+       // Remove drag-over class from all cells (in case drop didn't happen on a cell)
+       document.querySelectorAll('.grid-cell').forEach(cell => cell.classList.remove('drag-over'));
+    }
+
+    // Export last 9 images as JPEG
+    document.getElementById('exportBtn').addEventListener('click', () => {
+      // Filter cells that are either images (with or without overlay) or solid colors
+      const cellsToExport = gridData.filter(cell => cell.type === 'image' || cell.type === 'color');
+
+      if (cellsToExport.length === 0) {
+        alert('Add images or colored cells to export!');
+        return;
+      }
+
+      // Take last 9 cells (or all if less than 9)
+      const items = cellsToExport.slice(-9);
+
+      // Create a canvas for the grid
+      const canvas = document.createElement('canvas');
+      const ctx = canvas.getContext('2d');
+
+      // Target dimensions for each cell (Instagram standard might be 1080x1080, or 1080x1350, 1080x1920)
+      // Since the grid cells are 9:16, let's use a size that reflects that but is reasonable for export.
+      // A common export size for a 3x3 grid might make sense, perhaps 1080px width total (3x 360px wide cells)
+      // If cells are 9:16 (width:height), then height = width * 16/9.
+      // Let's use cell size 300x533 (approx 9:16) which results in a 900x1599 grid. Or scale up.
+      // Using 360x640 as cell size -> 1080x1920 total for 3x3 block. This matches a common tall Insta post.
+      const cellWidth = 360;
+      const cellHeight = 640; // 360 * (16/9) = 640
+
+      // Calculate canvas size based on number of items (max 3 columns)
+      const cols = Math.min(items.length, 3);
+      const rows = Math.ceil(items.length / 3);
+
+      canvas.width = cols * cellWidth;
+      canvas.height = rows * cellHeight;
+
+      // Draw white background
+      ctx.fillStyle = '#ffffff';
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+      // Load and draw each item (image or color)
+      let itemsLoaded = 0; // Counter for images, colors are synchronous
+      const totalImages = items.filter(item => item.type === 'image').length;
+
+      if (totalImages === 0) {
+           // If no images, just draw colors and export immediately
+           items.forEach((item, index) => {
+                const col = index % 3;
+                const row = Math.floor(index / 3);
+                const x = col * cellWidth;
+                const y = row * cellHeight;
+
+                if (item.type === 'color') {
+                   ctx.fillStyle = item.content;
+                   ctx.fillRect(x, y, cellWidth, cellHeight);
+                }
+                // Image type is filtered out if totalImages is 0
+           });
+           const dataURL = canvas.toDataURL('image/jpeg', 0.95); // Use higher quality for final export
+           const link = document.createElement('a');
+           link.download = 'instagram-grid.jpg';
+           link.href = dataURL;
+           link.click();
+
+      } else {
+         // If there are images, load them asynchronously
+         items.forEach((item, index) => {
+            const col = index % 3;
+            const row = Math.floor(index / 3);
+            const x = col * cellWidth;
+            const y = row * cellHeight;
+
+            if (item.type === 'color') {
+               ctx.fillStyle = item.content;
+               ctx.fillRect(x, y, cellWidth, cellHeight);
+               // Color blocks are synchronous, increment counter here if needed for a single counter
+                if (totalImages === 0) itemsLoaded++; // Only if no images are expected
+            } else if (item.type === 'image') {
+                const img = new Image();
+                img.onload = function () {
+                   // Draw image scaled to cell size
+                   ctx.drawImage(img, x, y, cellWidth, cellHeight);
+
+                   // Apply color overlay if exists
+                   if (item.color) {
+                     ctx.save();
+                     ctx.globalCompositeOperation = 'multiply';
+                     ctx.fillStyle = item.color;
+                     ctx.fillRect(x, y, cellWidth, cellHeight);
+                     ctx.restore();
+                   }
+
+                   itemsLoaded++;
+                   // Check if all images are loaded (only count images for async completion)
+                   if (itemsLoaded === totalImages) {
+                     // All async tasks (image loading) are done, export canvas
+                     const dataURL = canvas.toDataURL('image/jpeg', 0.95); // Use higher quality
+                     const link = document.createElement('a');
+                     link.download = 'instagram-grid.jpg';
+                     link.href = dataURL;
+                     link.click();
+                   }
+                };
+                img.onerror = function() {
+                     console.error("Failed to load image for export:", item.content);
+                     itemsLoaded++; // Still increment counter to allow export to proceed
+                     if (itemsLoaded === totalImages) {
+                        // Export even if some images failed
+                         const dataURL = canvas.toDataURL('image/jpeg', 0.95); // Use higher quality
+                         const link = document.createElement('a');
+                         link.download = 'instagram-grid.jpg';
+                         link.href = dataURL;
+                         link.click();
+                     }
+                };
+                img.src = item.content;
+            }
+         });
+      }
+    });
+
+    // Button event listeners
+    document.getElementById('addRowBtn').addEventListener('click', addNewRow);
+    document.getElementById('loadMoreBtn').addEventListener('click', addNewRow);
+
+     // Keep color picker dropdown open when interacting inside it
+     document.querySelector('.color-picker-dropdown').addEventListener('mouseenter', () => {
+         document.querySelector('.color-picker-container').classList.add('active');
+     });
+     document.querySelector('.color-picker-dropdown').addEventListener('mouseleave', () => {
+         document.querySelector('.color-picker-container').classList.remove('active');
+     });
+
+
+    // Initialize the app
+    document.addEventListener('DOMContentLoaded', loadFromStorage);
+  </script>
+</body>
+
+</html>
